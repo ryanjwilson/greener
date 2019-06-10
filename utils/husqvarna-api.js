@@ -1,5 +1,7 @@
 const { URLSearchParams } = require("url");
 const fetch = require("node-fetch");
+const authUrl = "https://api.authentication.husqvarnagroup.dev/v1";
+const amcUrl = "https://api.amc.husqvarna.dev/v1/mowers";
 
 /**
  * Requests an access token from the Authentication API.
@@ -8,7 +10,7 @@ const fetch = require("node-fetch");
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    const url = "https://api.authentication.husqvarnagroup.dev/v1/oauth2/token";
+    const url = `${authUrl}/oauth2/token`;
 
     const response = await fetch(url, {
         method: "POST",
@@ -35,7 +37,7 @@ const getToken = async () => {
  * @returns a collection of authentication attributes
  */
 const validateToken = async (token) => {
-    const url = `https://api.authentication.husqvarnagroup.dev/v1/token/${token}`;
+    const url = `${authUrl}/token/${token}`;
 
     const response = await fetch(url, {
         headers: {
@@ -60,7 +62,7 @@ const validateToken = async (token) => {
  * @returns an HTTP response code
  */
 const invalidateToken = async (token) => {
-    const url = `https://api.authentication.husqvarnagroup.dev/v1/token/${token}`;
+    const url = `${authUrl}/token/${token}`;
 
     return await fetch(url, {
         method: "DELETE",
@@ -79,7 +81,7 @@ const invalidateToken = async (token) => {
  * @returns a collection of user attributes
  */
 const getUser = async (userId, token) => {
-    const url = `https://api.authentication.husqvarnagroup.dev/v1/users/${userId}`;
+    const url = `${authUrl}/users/${userId}`;
 
     const response = await fetch(url, {
         headers: {
@@ -97,16 +99,14 @@ const getUser = async (userId, token) => {
 };
 
 /**
- * Retrieves all paired mowers for a single user.
+ * Retrieves all paired mowers associated with a user.
  * 
  * @param {string} token the access token associted with this user
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
-    const url = "https://api.amc.husqvarna.dev/v1/mowers";
-
-    const response = await fetch(url, {
+    const response = await fetch(amcUrl, {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
@@ -122,7 +122,7 @@ const getMowers = async (token) => {
 };
 
 /**
- * Finds and retrieves a mower by ID.
+ * Finds and retrieves a specific mower.
  * 
  * @param {string} mowerId the ID of the mower to find
  * @param {string} token the access token
@@ -130,7 +130,7 @@ const getMowers = async (token) => {
  * @returns a collection of mower attributes and data
  */
 const getMower = async (mowerId, token) => {
-    const url = `https://api.amc.husqvarna.dev/v1/mowers/${mowerId}`;
+    const url = `${amcUrl}/${mowerId}`;
 
     const response = await fetch(url, {
         "Authorization": `Bearer ${token}`,
