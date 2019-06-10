@@ -32,7 +32,7 @@ const getToken = async () => {
 /**
  * Validates an access token through the Authentication API.
  * 
- * @param {string} token the access token to be validated
+ * @param {string} token the access token associated with this user
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of authentication attributes
  */
@@ -57,7 +57,7 @@ const validateToken = async (token) => {
 /**
  * Invalidates an access token through the Authentication API.
  * 
- * @param {string} token the access token to be invalidated
+ * @param {string} token the access token associated with this user
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns an HTTP response code
  */
@@ -76,7 +76,7 @@ const invalidateToken = async (token) => {
  * Finds and retrieves a user by ID.
  * 
  * @param {string} userId the ID of the user to find
- * @param {string} token the access token
+ * @param {string} token the access token associated with this user
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of user attributes
  */
@@ -101,7 +101,7 @@ const getUser = async (userId, token) => {
 /**
  * Retrieves all paired mowers associated with a user.
  * 
- * @param {string} token the access token associted with this user
+ * @param {string} token the access token associated with this user
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a list of available mowers
  */
@@ -125,7 +125,7 @@ const getMowers = async (token) => {
  * Finds and retrieves a specific mower.
  * 
  * @param {string} mowerId the ID of the mower to find
- * @param {string} token the access token
+ * @param {string} token the access token associated with this user
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of mower attributes and data
  */
