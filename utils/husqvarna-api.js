@@ -21,7 +21,7 @@ const getToken = async () => {
     });
 
     if (!response.ok) {
-        throw new Error(`${response.status} (${response.statusText})`);
+        throw new Error(response.status);
     }
 
     return response.json();
@@ -46,7 +46,7 @@ const validateToken = async (token) => {
     });
 
     if (!response.ok) {
-        throw new Error(`${response.status} (${response.statusText})`);
+        throw new Error(response.status);
     }
 
     return response.json();
@@ -90,7 +90,7 @@ const getUser = async (userId, token) => {
     });
 
     if (!response.ok) {
-        throw new Error(`${response.status} (${response.statusText})`);
+        throw new Error(response.status);
     }
 
     return response.json();
@@ -115,7 +115,7 @@ const getMowers = async (token) => {
     });
 
     if (!response.ok) {
-        throw new Error(`${response.status} (${response.statusText})`);
+        throw new Error(response.status);
     }
 
     return response.json();
@@ -139,7 +139,7 @@ const getMower = async (mowerId, token) => {
     });
 
     if (!response.ok) {
-        throw new Error(`${response.status} (${response.statusText})`);
+        throw new Error(response.status);
     }
 
     return response.json();
