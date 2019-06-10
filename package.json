@@ -4,15 +4,12 @@
   "description": "A backend Node.js service that aggregates autonomous lawn and garden device metrics, geolocation data, and current and forecasted weather conditions.",
   "main": "app.js",
   "private": true,
-  "scripts": {
-    
-  },
+  "scripts": {},
   "dependencies": {
-
+    "dotenv": "8.0.0",
+    "node-fetch": "2.6.0"
   },
-  "devDependencies": {
-
-  },
+  "devDependencies": {},
   "engines": {
     "node": "12.4.0",
     "npm": "6.9.0"
