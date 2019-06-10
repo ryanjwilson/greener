@@ -12,7 +12,7 @@ const getToken = async () => {
     const response = await fetch(url, {
         method: "POST",
         headers: {
-            "X-Api-Key": process.env.API_KEY,
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY,
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -47,7 +47,7 @@ const getMowers = async (token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
@@ -73,7 +73,7 @@ const getStatus = async (mowerId, token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
@@ -99,7 +99,7 @@ const getGeofence = async (mowerId, token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
@@ -123,7 +123,7 @@ const getSettings = async (mowerId, token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 

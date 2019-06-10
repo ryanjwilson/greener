@@ -16,7 +16,7 @@ const getToken = async () => {
         method: "POST",
         body: new URLSearchParams({
             grant_type: "password",
-            client_id: process.env.API_KEY,
+            client_id: process.env.HUSQVARNA_API_KEY,
             username: process.env.USERNAME,
             password: process.env.PASSWORD
         })
@@ -43,7 +43,7 @@ const validateToken = async (token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
@@ -67,7 +67,7 @@ const invalidateToken = async (token) => {
     return await fetch(url, {
         method: "DELETE",
         headers: {
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 };
@@ -87,7 +87,7 @@ const getUser = async (userId, token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
@@ -110,7 +110,7 @@ const getMowers = async (token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
@@ -136,7 +136,7 @@ const getMower = async (mowerId, token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.API_KEY
+            "X-Api-Key": process.env.HUSQVARNA_API_KEY
         }
     });
 
