@@ -133,9 +133,11 @@ const getMower = async (mowerId, token) => {
     const url = `${amcUrl}/${mowerId}`;
 
     const response = await fetch(url, {
-        "Authorization": `Bearer ${token}`,
-        "Authorization-Provider": "husqvarna",
-        "X-Api-Key": process.env.API_KEY
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Authorization-Provider": "husqvarna",
+            "X-Api-Key": process.env.API_KEY
+        }
     });
 
     if (!response.ok) {
