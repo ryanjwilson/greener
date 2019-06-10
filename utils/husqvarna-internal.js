@@ -1,4 +1,6 @@
 const fetch = require("node-fetch");
+const AUTH_URL = "https://iam-api.dss.husqvarnagroup.net";
+const AMC_URL = "https://amc-api.dss.husqvarnagroup.net/v1/mowers";
 
 /**
  * Requests an access token from an internal endpoint.
@@ -7,7 +9,7 @@ const fetch = require("node-fetch");
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    const url = "https://iam-api.dss.husqvarnagroup.net/api/v3/token"; // unofficial internal endpoint
+    const url = `${AUTH_URL}/api/v3/token`;         // unofficial internal endpoint
 
     const response = await fetch(url, {
         method: "POST",
@@ -41,9 +43,7 @@ const getToken = async () => {
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
-    const url = "https://amc-api.dss.husqvarnagroup.net/v1/mowers"; // unofficial internal endpoint
-
-    const response = await fetch(url, {
+    const response = await fetch(AMC_URL, {         // unofficial internal endpoint
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
@@ -67,7 +67,7 @@ const getMowers = async (token) => {
  * @returns a collection of status attributes for the mower
  */
 const getStatus = async (mowerId, token) => {
-    const url = `https://amc-api.dss.husqvarnagroup.net/v1/mowers/${mowerId}/status`; // unofficial internal endpoint
+    const url = `${AMC_URL}/${mowerId}/status`;     // unofficial internal endpoint
 
     const response = await fetch(url, {
         headers: {
@@ -93,7 +93,7 @@ const getStatus = async (mowerId, token) => {
  * @returns a collection of mower attributes and data
  */
 const getGeofence = async (mowerId, token) => {
-    const url = `https://amc-api.dss.husqvarnagroup.net/v1/mowers/${mowerId}/geofence`; // unofficial internal endpoint
+    const url = `${AMC_URL}/${mowerId}/geofence`;   // unofficial internal endpoint
 
     const response = await fetch(url, {
         headers: {
@@ -117,7 +117,7 @@ const getGeofence = async (mowerId, token) => {
  * @param {string} token the access token associated with this user
  */
 const getSettings = async (mowerId, token) => {
-    const url = `https://amc-api.dss.husqvarnagroup.net/v1/mowers/${mowerId}/settings`;
+    const url = `${AMC_URL}/${mowerId}/settings`;   // unofficial internal endpoint
 
     const response = await fetch(url, {
         headers: {

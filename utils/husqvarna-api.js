@@ -1,7 +1,7 @@
 const { URLSearchParams } = require("url");
 const fetch = require("node-fetch");
-const authUrl = "https://api.authentication.husqvarnagroup.dev/v1";
-const amcUrl = "https://api.amc.husqvarna.dev/v1/mowers";
+const AUTH_URL = "https://api.authentication.husqvarnagroup.dev/v1";
+const AMC_URL = "https://api.amc.husqvarna.dev/v1/mowers";
 
 /**
  * Requests an access token from the Authentication API.
@@ -10,7 +10,7 @@ const amcUrl = "https://api.amc.husqvarna.dev/v1/mowers";
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    const url = `${authUrl}/oauth2/token`;
+    const url = `${AUTH_URL}/oauth2/token`;
 
     const response = await fetch(url, {
         method: "POST",
@@ -37,7 +37,7 @@ const getToken = async () => {
  * @returns a collection of authentication attributes
  */
 const validateToken = async (token) => {
-    const url = `${authUrl}/token/${token}`;
+    const url = `${AUTH_URL}/token/${token}`;
 
     const response = await fetch(url, {
         headers: {
@@ -62,7 +62,7 @@ const validateToken = async (token) => {
  * @returns an HTTP response code
  */
 const invalidateToken = async (token) => {
-    const url = `${authUrl}/token/${token}`;
+    const url = `${AUTH_URL}/token/${token}`;
 
     return await fetch(url, {
         method: "DELETE",
@@ -81,7 +81,7 @@ const invalidateToken = async (token) => {
  * @returns a collection of user attributes
  */
 const getUser = async (userId, token) => {
-    const url = `${authUrl}/users/${userId}`;
+    const url = `${AUTH_URL}/users/${userId}`;
 
     const response = await fetch(url, {
         headers: {
@@ -106,7 +106,7 @@ const getUser = async (userId, token) => {
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
-    const response = await fetch(amcUrl, {
+    const response = await fetch(AMC_URL, {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
@@ -130,7 +130,7 @@ const getMowers = async (token) => {
  * @returns a collection of mower attributes and data
  */
 const getMower = async (mowerId, token) => {
-    const url = `${amcUrl}/${mowerId}`;
+    const url = `${AMC_URL}/${mowerId}`;
 
     const response = await fetch(url, {
         headers: {
