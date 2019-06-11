@@ -10,7 +10,8 @@ const WEATHER_URL = "https://api.darksky.net/forecast";
  */
 const getWeatherConditions = async (latitude, longitude) => {
     const url = `${WEATHER_URL}/${process.env.DARK_SKY_API_KEY}/${latitude},${longitude}`;
-    const response = await fetch(`${url}?exclude=minutely,hourly,alerts,flags`);
+    const parameters = "exclude=minutely,hourly,alerts,flags";
+    const response = await fetch(`${url}?${parameters}`);
 
     if (!response.ok) {
         throw new Error(response.status);
