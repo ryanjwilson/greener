@@ -4,6 +4,7 @@ const husqvarna = {
     api: require("./utils/husqvarna-api"),
     internal: require("./utils/husqvarna-internal")
 };
+const darkskies = require("./utils/weather-api");
 
 const init = async () => {
     try {
@@ -20,10 +21,10 @@ const init = async () => {
         // parse, aggregate, and push external and internal mower data, current and forecasted
         // weather conditions, and location data into an array.
 
-        records = await populateExternalData(externalMowers);
-        records = await populateInternalData(internalMowers, records, internalToken);
+        records = await aggregateExternalData(externalMowers);
+        records = await aggregateInternalData(internalMowers, records, internalToken);
+        records = await aggregateWeatherConditions(records);
 
-        // fetch weather data, parse and aggregate
         // fetch location data, parse and aggregate
         // write records to shared spreadsheet
         
@@ -33,12 +34,12 @@ const init = async () => {
 };
 
 /**
- * Parses and populates a list of external mowers.
+ * Parses and populates a list of external mowers into the record list.
  * 
  * @param {Array<Object>} mowers the list of mowers
- * @returns a list of parsed mowers
+ * @returns a list of records after adding external mower data
  */
-const populateExternalData = (mowers) => {
+const aggregateExternalData = (mowers) => {
     let records = [];
 
     mowers.forEach((mower) => {
@@ -67,14 +68,14 @@ const populateExternalData = (mowers) => {
 };
 
 /**
- * Parses, aggregates, and populates a list of internal mowers.
+ * Parses and aggregates internal mower data to the record list.
  * 
  * @param {Array<Object>} mowers the list of mowers
  * @param {Array<Object>} records the list of existing records
  * @param {string} token the access token associated with this user
- * @returns a list of parsed and aggregated mowers
+ * @returns a list of records after adding internal mower data
  */
-const populateInternalData = async (mowers, records, token) => {
+const aggregateInternalData = async (mowers, records, token) => {
     for (let i = 0; i < mowers.length; i++) {
         const record = records[i];
         const mower = mowers[i];
@@ -99,8 +100,45 @@ const populateInternalData = async (mowers, records, token) => {
     return records;
 };
 
-const getWeatherConditions = () => {
+/**
+ * Parses and aggregates current and forecasted weather conditions into the record list.
+ * 
+ * @param {Array<Object>} records the list of existing records
+ * @returns a list of records after adding current and forecasted weather conditions
+ */
+const aggregateWeatherConditions = async (records) => {
+    for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        const latitude = record.lastLocations[0].latitude;
+        const longitude = record.lastLocations[1].longitude;
+        const { currently, daily: { data: forecast }} = await darkskies.getWeatherConditions(latitude, longitude);
 
+        record.weather = [];
+        for (let j = 0; j < forecast.length; j++) {
+            const daily = forecast[j];
+
+            record.weather.push({
+                summary: (j === 0 ? `${currently.summary} ${daily.summary}` : forecast.summary),
+                sunrise: daily.sunriseTime,
+                sunset: daily.sunsetTime,
+                precipAccumulation: (j === 0 ? currently.precipAccumulation || 0 : "n/a"),
+                precipIntensity: daily.precipIntensity || 0,
+                precipChance: daily.precipProbability,
+                precipType: daily.precipType || "none",
+                temperature: (j === 0 ? currently.temperature : "n/a"),
+                high: daily.temperatureMax,
+                low: daily.temperatureMin,
+                dewPoint: daily.dewPoint,
+                humidity: daily.humidity,
+                pressure: daily.pressure,
+                windSpeed: daily.windSpeed,
+                cloudCover: daily.cloudCover
+            });
+        }
+
+        records.splice(i, 1, record);
+    }
+    return records;
 };
 
 init();
