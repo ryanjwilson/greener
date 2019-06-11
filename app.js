@@ -5,7 +5,11 @@ const husqvarna = {
     internal: require("./utils/husqvarna-internal")
 };
 const darkskies = require("./utils/weather-api");
+const mapbox = require("./utils/geocode-api");
 
+/**
+ * 
+ */
 const init = async () => {
     try {
         let records = [];
@@ -24,8 +28,8 @@ const init = async () => {
         records = await aggregateExternalData(externalMowers);
         records = await aggregateInternalData(internalMowers, records, internalToken);
         records = await aggregateWeatherConditions(records);
+        records = await aggregateLocationData(records);
 
-        // fetch location data, parse and aggregate
         // write records to shared spreadsheet
         
     } catch (error) {
@@ -138,7 +142,38 @@ const aggregateWeatherConditions = async (records) => {
 
         records.splice(i, 1, record);
     }
+
     return records;
+};
+
+/**
+ * Parses and aggregates location data into the record list.
+ * 
+ * @param {Array<Object>} records the list of existing records
+ * @returns a list of records after adding location data
+ */
+const aggregateLocationData = async (records) => {
+    for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        const latitude = record.lastLocations[0].latitude;
+        const longitude = record.lastLocations[1].longitude;
+        const { features: addresses } = await mapbox.getAddress(latitude, longitude);
+
+        const address = addresses[0].place_name.split(",");
+        record.street = address[0].trim();
+        record.city = address[1].trim();
+        record.state = address[2].substring(1, address[2].length - 5).trim();
+        record.zip = address[2].substring(record.state.length + 1).trim();
+        record.country = address[3].trim();
+
+        records.splice(i, 1, record);
+    }
+
+    return records;
+};
+
+const updateSpreadsheet = () => {
+
 };
 
 init();
