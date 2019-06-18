@@ -8,7 +8,7 @@ const darkskies = require("./utils/weather-api");
 const mapbox = require("./utils/geocode-api");
 
 /**
- * 
+ * Executes API requests in parallel before writing fetched data to database.
  */
 const init = async () => {
     try {
@@ -25,13 +25,13 @@ const init = async () => {
         // parse, aggregate, and push external and internal mower data, current and forecasted
         // weather conditions, and location data into an array.
 
-        records = await aggregateExternalData(externalMowers);
+        records = await aggregateExternalData(userId, externalMowers);
         records = await aggregateInternalData(internalMowers, records, internalToken);
         records = await aggregateWeatherConditions(records);
         records = await aggregateLocationData(records);
 
-        // write records to shared spreadsheet
-        
+        // write records to database
+
     } catch (error) {
         console.log(error);
     }
@@ -43,12 +43,13 @@ const init = async () => {
  * @param {Array<Object>} mowers the list of mowers
  * @returns a list of records after adding external mower data
  */
-const aggregateExternalData = (mowers) => {
+const aggregateExternalData = (userId, mowers) => {
     let records = [];
 
     mowers.forEach((mower) => {
         records.push({
-            id: mower.id,
+            userId: userId,
+            deviceId: mower.id,
             type: mower.type,
             name: mower.attributes.system.name,
             model: mower.attributes.system.model,
@@ -56,7 +57,7 @@ const aggregateExternalData = (mowers) => {
             battery: mower.attributes.battery.batteryPercent,
             mode: mower.attributes.mower.mode,
             activity: mower.attributes.mower.activity,
-            state: mower.attributes.mower.state,
+            deviceState: mower.attributes.mower.state,
             errorCode: mower.attributes.mower.errorCode,
             errorCodeTimestamp: mower.attributes.mower.errorCodeTimestamp,
             schedule: mower.attributes.calendar.tasks,
@@ -80,6 +81,8 @@ const aggregateExternalData = (mowers) => {
  * @returns a list of records after adding internal mower data
  */
 const aggregateInternalData = async (mowers, records, token) => {
+    console.info("Fetching internal mower status, geofence, and settings data.");
+
     for (let i = 0; i < mowers.length; i++) {
         const record = records[i];
         const mower = mowers[i];
@@ -111,10 +114,14 @@ const aggregateInternalData = async (mowers, records, token) => {
  * @returns a list of records after adding current and forecasted weather conditions
  */
 const aggregateWeatherConditions = async (records) => {
+    console.info("Fetching current and forecasted weather conditions.");
+
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
-        const latitude = record.lastLocations[0].latitude;
-        const longitude = record.lastLocations[1].longitude;
+        // const latitude = record.lastLocations[0].latitude;
+        // const longitude = record.lastLocations[1].longitude;
+        const latitude = 44.968046;
+        const longitude = -94.420307;
         const { currently, daily: { data: forecast }} = await darkskies.getWeatherConditions(latitude, longitude);
 
         record.weather = [];
@@ -122,7 +129,7 @@ const aggregateWeatherConditions = async (records) => {
             const daily = forecast[j];
 
             record.weather.push({
-                summary: (j === 0 ? `${currently.summary} ${daily.summary}` : forecast.summary),
+                summary: (j === 0 ? `${currently.summary} ${daily.summary}` : daily.summary),
                 sunrise: daily.sunriseTime,
                 sunset: daily.sunsetTime,
                 precipAccumulation: (j === 0 ? currently.precipAccumulation || 0 : "n/a"),
@@ -153,6 +160,8 @@ const aggregateWeatherConditions = async (records) => {
  * @returns a list of records after adding location data
  */
 const aggregateLocationData = async (records) => {
+    console.info("Fetching physical address from coordinates.");
+
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const latitude = record.lastLocations[0].latitude;
@@ -170,10 +179,6 @@ const aggregateLocationData = async (records) => {
     }
 
     return records;
-};
-
-const updateSpreadsheet = () => {
-
 };
 
 init();
