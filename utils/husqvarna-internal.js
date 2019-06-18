@@ -9,8 +9,9 @@ const AMC_URL = "https://amc-api.dss.husqvarnagroup.net/v1/mowers";
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    const url = `${AUTH_URL}/api/v3/token`;         // unofficial internal endpoint
+    console.info("Fetching internal authentication token.");
 
+    const url = `${AUTH_URL}/api/v3/token`;         // unofficial internal endpoint
     const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -43,6 +44,8 @@ const getToken = async () => {
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
+    console.info("Fetching internal mower data.");
+
     const response = await fetch(AMC_URL, {         // unofficial internal endpoint
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -68,7 +71,6 @@ const getMowers = async (token) => {
  */
 const getStatus = async (mowerId, token) => {
     const url = `${AMC_URL}/${mowerId}/status`;     // unofficial internal endpoint
-
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -94,7 +96,6 @@ const getStatus = async (mowerId, token) => {
  */
 const getGeofence = async (mowerId, token) => {
     const url = `${AMC_URL}/${mowerId}/geofence`;   // unofficial internal endpoint
-
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -118,7 +119,6 @@ const getGeofence = async (mowerId, token) => {
  */
 const getSettings = async (mowerId, token) => {
     const url = `${AMC_URL}/${mowerId}/settings`;   // unofficial internal endpoint
-
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,

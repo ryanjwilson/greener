@@ -10,8 +10,9 @@ const AMC_URL = "https://api.amc.husqvarna.dev/v1/mowers";
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    const url = `${AUTH_URL}/oauth2/token`;
+    console.info("Fetching API authentication token.");
 
+    const url = `${AUTH_URL}/oauth2/token`;
     const response = await fetch(url, {
         method: "POST",
         body: new URLSearchParams({
@@ -38,7 +39,6 @@ const getToken = async () => {
  */
 const validateToken = async (token) => {
     const url = `${AUTH_URL}/token/${token}`;
-
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -82,7 +82,6 @@ const invalidateToken = async (token) => {
  */
 const getUser = async (userId, token) => {
     const url = `${AUTH_URL}/users/${userId}`;
-
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -106,6 +105,8 @@ const getUser = async (userId, token) => {
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
+    console.info("Fetching API mower data.");
+    
     const response = await fetch(AMC_URL, {
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -131,7 +132,6 @@ const getMowers = async (token) => {
  */
 const getMower = async (mowerId, token) => {
     const url = `${AMC_URL}/${mowerId}`;
-
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
