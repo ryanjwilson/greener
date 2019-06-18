@@ -118,10 +118,8 @@ const aggregateWeatherConditions = async (records) => {
 
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
-        // const latitude = record.lastLocations[0].latitude;
-        // const longitude = record.lastLocations[1].longitude;
-        const latitude = 44.968046;
-        const longitude = -94.420307;
+        const latitude = record.lastLocations[0].latitude;
+        const longitude = record.lastLocations[1].longitude;
         const { currently, daily: { data: forecast }} = await darkskies.getWeatherConditions(latitude, longitude);
 
         record.weather = [];
