@@ -1,5 +1,7 @@
 const { URLSearchParams } = require("url");
 const fetch = require("node-fetch");
+const logger = require("./logger");
+
 const AUTH_URL = "https://api.authentication.husqvarnagroup.dev/v1";
 const AMC_URL = "https://api.amc.husqvarna.dev/v1/mowers";
 
@@ -10,7 +12,7 @@ const AMC_URL = "https://api.amc.husqvarna.dev/v1/mowers";
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    console.info("Fetching API authentication token.");
+    logger.log("retrieving external authentication token.");
 
     const url = `${AUTH_URL}/oauth2/token`;
     const response = await fetch(url, {
@@ -105,7 +107,7 @@ const getUser = async (userId, token) => {
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
-    console.info("Fetching API mower data.");
+    logger.log("fetching external mower data.");
     
     const response = await fetch(AMC_URL, {
         headers: {

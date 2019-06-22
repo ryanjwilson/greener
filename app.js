@@ -1,5 +1,6 @@
 require("dotenv").config({ path: "./config/.env" });
 
+const logger = require("./utils/logger");
 const husqvarna = {
     api: require("./utils/husqvarna-api"),
     internal: require("./utils/husqvarna-internal")
@@ -31,7 +32,7 @@ const init = async () => {
         records = await aggregateLocationData(records);
 
         // write records to database
-
+        
     } catch (error) {
         console.log(error);
     }
@@ -81,7 +82,7 @@ const aggregateExternalData = (userId, mowers) => {
  * @returns a list of records after adding internal mower data
  */
 const aggregateInternalData = async (mowers, records, token) => {
-    console.info("Fetching internal mower status, geofence, and settings data.");
+    logger.log("fetching internal mower status, geofence, and settings data.");
 
     for (let i = 0; i < mowers.length; i++) {
         const record = records[i];
@@ -114,7 +115,7 @@ const aggregateInternalData = async (mowers, records, token) => {
  * @returns a list of records after adding current and forecasted weather conditions
  */
 const aggregateWeatherConditions = async (records) => {
-    console.info("Fetching current and forecasted weather conditions.");
+    logger.log("fetching current and forecasted weather conditions.");
 
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
@@ -158,15 +159,15 @@ const aggregateWeatherConditions = async (records) => {
  * @returns a list of records after adding location data
  */
 const aggregateLocationData = async (records) => {
-    console.info("Fetching physical address from coordinates.");
+    logger.log("fetching physical address from coordinates.");
 
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const latitude = record.lastLocations[0].latitude;
         const longitude = record.lastLocations[1].longitude;
         const { features: addresses } = await mapbox.getAddress(latitude, longitude);
-
         const address = addresses[0].place_name.split(",");
+
         record.street = address[0].trim();
         record.city = address[1].trim();
         record.state = address[2].substring(1, address[2].length - 5).trim();

@@ -1,4 +1,6 @@
 const fetch = require("node-fetch");
+const logger = require("./logger");
+
 const AUTH_URL = "https://iam-api.dss.husqvarnagroup.net";
 const AMC_URL = "https://amc-api.dss.husqvarnagroup.net/v1/mowers";
 
@@ -9,7 +11,7 @@ const AMC_URL = "https://amc-api.dss.husqvarnagroup.net/v1/mowers";
  * @returns a collection of authentication attributes
  */
 const getToken = async () => {
-    console.info("Fetching internal authentication token.");
+    logger.log("retrieving internal authentication token.");
 
     const url = `${AUTH_URL}/api/v3/token`;         // unofficial internal endpoint
     const response = await fetch(url, {
@@ -44,7 +46,7 @@ const getToken = async () => {
  * @returns a list of available mowers
  */
 const getMowers = async (token) => {
-    console.info("Fetching internal mower data.");
+    logger.log("fetching internal mower data.");
 
     const response = await fetch(AMC_URL, {         // unofficial internal endpoint
         headers: {
