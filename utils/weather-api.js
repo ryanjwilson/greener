@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+
 const WEATHER_URL = "https://api.darksky.net/forecast";
 
 /**
@@ -8,8 +9,9 @@ const WEATHER_URL = "https://api.darksky.net/forecast";
  * @param {number} longitude the longitude of the location
  * @returns the current weather conditions for the location
  */
+
 const getWeatherConditions = async (latitude, longitude) => {    
-    const url = `${WEATHER_URL}/${process.env.DARK_SKY_API_KEY}/${latitude},${longitude}`;
+    const url = `${WEATHER_URL}/${process.env.DARKSKY_API_KEY}/${latitude},${longitude}`;
     const parameters = "exclude=minutely,hourly,alerts,flags";
     const response = await fetch(`${url}?${parameters}`);
 
@@ -19,6 +21,10 @@ const getWeatherConditions = async (latitude, longitude) => {
 
     return response.json();
 };
+
+/**
+ * Export functions.
+ */
 
 module.exports = {
     getWeatherConditions

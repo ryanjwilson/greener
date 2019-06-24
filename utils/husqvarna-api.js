@@ -11,6 +11,7 @@ const AMC_URL = "https://api.amc.husqvarna.dev/v1/mowers";
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of authentication attributes
  */
+
 const getToken = async () => {
     logger.log("retrieving external authentication token.");
 
@@ -19,9 +20,9 @@ const getToken = async () => {
         method: "POST",
         body: new URLSearchParams({
             grant_type: "password",
-            client_id: process.env.HUSQVARNA_API_KEY,
-            username: process.env.USERNAME,
-            password: process.env.PASSWORD
+            client_id: process.env.HUSQV_API_KEY,
+            username: process.env.HUSQV_USERNAME,
+            password: process.env.HUSQV_PASSWORD
         })
     });
 
@@ -39,13 +40,14 @@ const getToken = async () => {
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of authentication attributes
  */
+
 const validateToken = async (token) => {
     const url = `${AUTH_URL}/token/${token}`;
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQVARNA_API_KEY
+            "X-Api-Key": process.env.HUSQV_API_KEY
         }
     });
 
@@ -63,13 +65,14 @@ const validateToken = async (token) => {
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns an HTTP response code
  */
+
 const invalidateToken = async (token) => {
     const url = `${AUTH_URL}/token/${token}`;
 
     return await fetch(url, {
         method: "DELETE",
         headers: {
-            "X-Api-Key": process.env.HUSQVARNA_API_KEY
+            "X-Api-Key": process.env.HUSQV_API_KEY
         }
     });
 };
@@ -82,13 +85,14 @@ const invalidateToken = async (token) => {
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of user attributes
  */
+
 const getUser = async (userId, token) => {
     const url = `${AUTH_URL}/users/${userId}`;
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQVARNA_API_KEY
+            "X-Api-Key": process.env.HUSQV_API_KEY
         }
     });
 
@@ -106,6 +110,7 @@ const getUser = async (userId, token) => {
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a list of available mowers
  */
+
 const getMowers = async (token) => {
     logger.log("fetching external mower data.");
     
@@ -113,7 +118,7 @@ const getMowers = async (token) => {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQVARNA_API_KEY
+            "X-Api-Key": process.env.HUSQV_API_KEY
         }
     });
 
@@ -132,13 +137,14 @@ const getMowers = async (token) => {
  * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of mower attributes and data
  */
+
 const getMower = async (mowerId, token) => {
     const url = `${AMC_URL}/${mowerId}`;
     const response = await fetch(url, {
         headers: {
             "Authorization": `Bearer ${token}`,
             "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQVARNA_API_KEY
+            "X-Api-Key": process.env.HUSQV_API_KEY
         }
     });
 
@@ -148,6 +154,10 @@ const getMower = async (mowerId, token) => {
 
     return response.json();
 };
+
+/**
+ * Export functions.
+ */
 
 module.exports = {
     getToken,

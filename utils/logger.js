@@ -3,6 +3,7 @@
  * 
  * @param {string} message the message to be logged
  */
+
 const log = (message) => {
     const dtf = new Intl.DateTimeFormat("en-US", {
       timeZone: "America/New_York",
@@ -16,6 +17,10 @@ const log = (message) => {
     });
     console.info(`[${dtf.format(new Date())}] ${message}`);
   };
+  
+  /**
+   * Export functions.
+   */
   
   module.exports = {
     log
