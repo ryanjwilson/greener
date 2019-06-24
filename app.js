@@ -1,16 +1,17 @@
 require("dotenv").config({ path: "./config/.env" });
 
 const logger = require("./utils/logger");
-const husqvarna = {
+const darksky = require("./utils/weather-api");
+const db = require("./utils/database");
+const husqv = {
     api: require("./utils/husqvarna-api"),
     internal: require("./utils/husqvarna-internal")
 };
-const darkskies = require("./utils/weather-api");
-const mapbox = require("./utils/geocode-api");
 
 /**
  * Executes API requests in parallel before writing fetched data to database.
  */
+
 const init = async () => {
     try {
         let records = [];
@@ -18,21 +19,23 @@ const init = async () => {
         // fetch external and internal access tokens, user information, and a list of paired
         // mowers from both the external and internal endpoints.
 
-        const { access_token: externalToken, user_id: userId } = await husqvarna.api.getToken();
-        const { data: { id: internalToken }} = await husqvarna.internal.getToken();
-        const { data: externalMowers } = await husqvarna.api.getMowers(externalToken);
-        const internalMowers = await husqvarna.internal.getMowers(internalToken);
+        const { access_token: externalToken, user_id: userId } = await husqv.api.getToken();
+        const { data: { id: internalToken }} = await husqv.internal.getToken();
+        const { data: externalMowers } = await husqv.api.getMowers(externalToken);
+        const internalMowers = await husqv.internal.getMowers(internalToken);
 
-        // parse, aggregate, and push external and internal mower data, current and forecasted
-        // weather conditions, and location data into an array.
+        // parse and aggregate external and internal mower data, as well as current and
+        // forecasted weather conditions into an array.
 
         records = await aggregateExternalData(userId, externalMowers);
         records = await aggregateInternalData(internalMowers, records, internalToken);
         records = await aggregateWeatherConditions(records);
-        records = await aggregateLocationData(records);
 
         // write records to database
         
+        records.forEach(async (record) => {
+            await db.bulkInsert(record);
+        });
     } catch (error) {
         console.log(error);
     }
@@ -44,29 +47,30 @@ const init = async () => {
  * @param {Array<Object>} mowers the list of mowers
  * @returns a list of records after adding external mower data
  */
+
 const aggregateExternalData = (userId, mowers) => {
     let records = [];
 
     mowers.forEach((mower) => {
         records.push({
-            userId: userId,
+            manufacturer: "husqv",
             deviceId: mower.id,
-            type: mower.type,
-            name: mower.attributes.system.name,
-            model: mower.attributes.system.model,
-            serialNumber: mower.attributes.system.serialNumber,
-            battery: mower.attributes.battery.batteryPercent,
-            mode: mower.attributes.mower.mode,
-            activity: mower.attributes.mower.activity,
-            deviceState: mower.attributes.mower.state,
-            errorCode: mower.attributes.mower.errorCode,
-            errorCodeTimestamp: mower.attributes.mower.errorCodeTimestamp,
-            schedule: mower.attributes.calendar.tasks,
-            nextStartTimestamp: mower.attributes.planner.nextStartTimestamp,
-            nextStartSource: mower.attributes.planner.override.action,
-            restrictedReason: mower.attributes.planner.restrictedReason,
+            deviceType: mower.type,
+            deviceName: mower.attributes.system.name,
+            deviceModel: mower.attributes.system.model,
+            serialNo: mower.attributes.system.serialNumber,
+            batteryPct: mower.attributes.battery.batteryPercent,
+            mowerMode: mower.attributes.mower.mode,
+            mowerActivity: mower.attributes.mower.activity,
+            mowerState: mower.attributes.mower.state,
+            lastError: mower.attributes.mower.errorCode,
+            lastErrorTs: mower.attributes.mower.errorCodeTimestamp,
+            schedules: mower.attributes.calendar.tasks,
+            nextStartTs: mower.attributes.planner.nextStartTimestamp,
+            override: mower.attributes.planner.override.action,
+            restrictReason: mower.attributes.planner.restrictedReason,
             connected: mower.attributes.metadata.connected,
-            statusTimestamp: mower.attributes.metadata.statusTimestamp
+            userId: userId
         });
     });
 
@@ -81,26 +85,40 @@ const aggregateExternalData = (userId, mowers) => {
  * @param {string} token the access token associated with this user
  * @returns a list of records after adding internal mower data
  */
+
 const aggregateInternalData = async (mowers, records, token) => {
     logger.log("fetching internal mower status, geofence, and settings data.");
 
     for (let i = 0; i < mowers.length; i++) {
         const record = records[i];
         const mower = mowers[i];
-        const status = await husqvarna.internal.getStatus(mower.id, token);
-        const { centralPoint: geofence } = await husqvarna.internal.getGeofence(mower.id, token);
-        const { settings } = await husqvarna.internal.getSettings(mower.id, token);
+        const status = await husqv.internal.getStatus(mower.id, token);
+        const { centralPoint: geofence } = await husqv.internal.getGeofence(mower.id, token);
+        const { settings } = await husqv.internal.getSettings(mower.id, token);
 
         record.internalId = mower.id;
         record.internalModel = mower.model;
-        record.currentStatus = mower.status.mowerStatus;
-        record.operatingMode = mower.status.operatingMode;
-        record.lastLocations = status.lastLocations;
-        record.geofenceLatitude = geofence.location.latitude;
-        record.geofenceLongitude = geofence.location.longitude;
-        record.geofenceLevel = geofence.sensitivity.level;
+        record.internalStatus = mower.status.mowerStatus;
+        record.internalOpMode = mower.status.operatingMode;
+        record.geofenceLat = geofence.location.latitude;
+        record.geofenceLong = geofence.location.longitude;
+        record.geofenceLvl = geofence.sensitivity.level;
         record.geofenceRadius = geofence.sensitivity.radius;
-        record.settings = settings;
+
+        record.lastLocations = status.lastLocations.filter((location) => {
+            delete location.gpsStatus;
+            return true;
+        });
+        record.settings = settings.filter((setting) => {        
+            setting.settingName = setting.id;
+            setting.settingValue = setting.value;
+            setting.settingDatatype = typeof setting.value;
+
+            delete setting.id;
+            delete setting.value;
+
+            return true;
+        });
 
         records.splice(i, 1, record);
     }
@@ -114,35 +132,69 @@ const aggregateInternalData = async (mowers, records, token) => {
  * @param {Array<Object>} records the list of existing records
  * @returns a list of records after adding current and forecasted weather conditions
  */
+
 const aggregateWeatherConditions = async (records) => {
     logger.log("fetching current and forecasted weather conditions.");
 
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const latitude = record.lastLocations[0].latitude;
-        const longitude = record.lastLocations[1].longitude;
-        const { currently, daily: { data: forecast }} = await darkskies.getWeatherConditions(latitude, longitude);
+        const longitude = record.lastLocations[0].longitude;
+        const { currently, daily: { data: forecast }} = await darksky.getWeatherConditions(latitude, longitude);
 
-        record.weather = [];
+        record.weather = [{
+            forecastType: "currently",
+            forecastDay: -1,
+            summary: currently.summary,
+            sunriseTs: undefined,
+            sunsetTs: undefined,
+            stormDist: currently.nearestStormDistance,
+            stormBearing: currently.nearestStormBearing,
+            precipAccum: undefined,
+            precipIntensity: currently.precipIntensity,
+            precipChance: currently.precipProbability,
+            precipType: undefined,
+            temp: currently.temperature,
+            tempHigh: undefined,
+            tempLow: undefined,
+            dewPoint: currently.dewPoint,
+            humidity: currently.humidity,
+            pressure: currently.pressure,
+            windSpeed: currently.windSpeed,
+            cloudCover: currently.cloudCover,
+            uvIndex: currently.uvIndex,
+            visibility: currently.visibility,
+            ozone: currently.ozone,
+            fetchTs: currently.time
+        }];
+
         for (let j = 0; j < forecast.length; j++) {
             const daily = forecast[j];
 
             record.weather.push({
-                summary: (j === 0 ? `${currently.summary} ${daily.summary}` : daily.summary),
-                sunrise: daily.sunriseTime,
-                sunset: daily.sunsetTime,
-                precipAccumulation: (j === 0 ? currently.precipAccumulation || 0 : "n/a"),
-                precipIntensity: daily.precipIntensity || 0,
+                forecastType: "daily",
+                forecastDay: j,
+                summary: daily.summary,
+                sunriseTS: daily.sunriseTime,
+                sunsetTs: daily.sunsetTime,
+                stormDist: undefined,
+                stormBearing: undefined,
+                precipAccum: daily.precipAccumulation || 0,
+                precipIntensity: daily.precipIntensity,
                 precipChance: daily.precipProbability,
                 precipType: daily.precipType || "none",
-                temperature: (j === 0 ? currently.temperature : "n/a"),
-                high: daily.temperatureMax,
-                low: daily.temperatureMin,
+                temp: undefined,
+                tempHigh: daily.temperatureMax,
+                tempLow: daily.temperatureMin,
                 dewPoint: daily.dewPoint,
                 humidity: daily.humidity,
                 pressure: daily.pressure,
                 windSpeed: daily.windSpeed,
-                cloudCover: daily.cloudCover
+                cloudCover: daily.cloudCover,
+                uvIndex: daily.uvIndex,
+                visibility: daily.visibility,
+                ozone: daily.ozone,
+                fetchTs: currently.time
             });
         }
 
@@ -153,31 +205,7 @@ const aggregateWeatherConditions = async (records) => {
 };
 
 /**
- * Parses and aggregates location data into the record list.
- * 
- * @param {Array<Object>} records the list of existing records
- * @returns a list of records after adding location data
+ * Kicks off execution of script.
  */
-const aggregateLocationData = async (records) => {
-    logger.log("fetching physical address from coordinates.");
-
-    for (let i = 0; i < records.length; i++) {
-        const record = records[i];
-        const latitude = record.lastLocations[0].latitude;
-        const longitude = record.lastLocations[1].longitude;
-        const { features: addresses } = await mapbox.getAddress(latitude, longitude);
-        const address = addresses[0].place_name.split(",");
-
-        record.street = address[0].trim();
-        record.city = address[1].trim();
-        record.state = address[2].substring(1, address[2].length - 5).trim();
-        record.zip = address[2].substring(record.state.length + 1).trim();
-        record.country = address[3].trim();
-
-        records.splice(i, 1, record);
-    }
-
-    return records;
-};
 
 init();
