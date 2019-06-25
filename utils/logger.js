@@ -4,7 +4,7 @@
  * @param {string} message the message to be logged
  */
 
-const log = (message) => {
+const log = (message, error) => {
     const dtf = new Intl.DateTimeFormat("en-US", {
       timeZone: "America/New_York",
       weekday: "short",
@@ -16,6 +16,10 @@ const log = (message) => {
       second: "2-digit"
     });
     console.info(`[${dtf.format(new Date())}] ${message}`);
+
+    if (error) {
+      // write to log file
+    }
   };
   
   /**
