@@ -6,13 +6,14 @@ const logger = require("./logger");
  * 
  * @returns the MySQL connection object
  */
-const getConnection = () => {
-    logger.log("establishing connection to database.");
 
+const getConnection = () => {
     return mysql.createConnection({
-        host: "localhost",
+        host: process.env.MYSQL_HOST,
         user: process.env.MYSQL_USERNAME,
-        password: process.env.MYSQL_PASSWORD
+        password: process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQL_DATABASE,
+        multipleStatements: true
     });
 };
 
@@ -20,98 +21,95 @@ const getConnection = () => {
  * Inserts data into the mowers, schedules, locations, settings, and forecasts tables
  * in a single transaction.
  * 
- * @param {Object} data 
+ * @param {Object} records the records to be inserted into the database
+ * @throws a SQL error if there is a connection, transcation, or query error
  */
-const bulkInsert = (data) => {
-    logger.log("inserting records into database.");
 
-    try {
-        const connection = getConnection();
+const bulkInsert = (records) => {
+    logger.log("establishing connection to database.");
 
-        connection.beginTransaction((error) => {
-            if (error) {
-                throw error;
-            }
+    records.forEach((record) => {
+        try {
+            const connection = getConnection();
 
-            // generate prepared statements
-
-            const mowerSQL = prepareMowerSQL(data);             // a single statement
-            const scheduleSQLs = prepareScheduleSQLs(data);     // an array of statements
-            const locationSQLs = prepareLocationSQLs(data);     // an array of statements
-            const settingSQLs = prepareSettingSQLs(data);       // an array of statements
-            const forecastSQLs = prepareForecastSQLs(data);     // an array of statements
-
-            // insert into mowers table
-
-            connection.query(mowerSQL, (error) => {
+            connection.beginTransaction((error) => {
                 if (error) {
-                    return connection.rollback(() => {
-                        throw error;
-                    });
-                }
-            });
-
-            // insert into schedules table
-
-            scheduleSQLs.forEach((scheduleSQL) => {
-                connection.query(scheduleSQL, (error) => {
-                    if (error) {
-                        return connection.rollback(() => {
-                            throw error;
-                        });
-                    }
-                });
-            });
-
-            // insert into locations table
-
-            locationSQLs.forEach((locationSQL) => {
-                connection.query(locationSQL, (error) => {
-                    if (error) {
-                        return connection.rollback(() => {
-                            throw error;
-                        });
-                    }
-                });
-            });
-
-            // insert into settings table (many records per mower)
-
-            settingSQLs.forEach((settingSQL) => {
-                connection.query(settingSQL, (error) => {
-                    if (error) {
-                        return connection.rollback(() => {
-                            throw error;
-                        });
-                    }
-                });
-            });
-
-            // insert into forecasts table (8 records per mower)
-
-            forecastSQLs.forEach((forecastSQL) => {
-                connection.query(forecastSQL, (error) => {
-                    if (error) {
-                        return connection.rollback(() => {
-                            throw error;
-                        });
-                    }
-                });
-            });
-
-            connection.commit((error) => {
-                if (error) {
-                    return connection.rollback(() => {
-                        throw error;
-                    });
+                    return logger.log("database connection refused.", error);
                 }
 
-                connection.end();
+                const mowerStmt = prepareMowerSQL(record);
+                const schedulesStmt = prepareScheduleSQL(record);
+                const locationsStmt = prepareLocationSQL(record);
+                const settingsStmt = prepareSettingSQL(record);
+                const forecastsStmt = prepareForecastSQL(record);
+    
+                connection.query(mowerStmt, (error) => {
+                    if (error) {
+                        logger.log("error in SQL statement.");
+                        logger.log("rolling back and writing error to logs.", error);
+    
+                        connection.rollback();
+                        return connection.end();
+                    }
+
+                    connection.query(schedulesStmt, (error) => {
+                        if (error) {
+                            logger.log("error in SQL statment.");
+                            logger.log("rolling back and writing error to logs.", error);
+        
+                            connection.rollback();
+                            return connection.end();
+                        }
+
+                        connection.query(locationsStmt, (error) => {
+                            if (error) {
+                                logger.log("error in SQL statement.");
+                                logger.log("rolling back and writing error to logs.", error);
+
+                                connection.rollback();
+                                return connection.end();
+                            }
+
+                            connection.query(settingsStmt, (error) => {
+                                if (error) {
+                                    logger.log("error in SQL statement.");
+                                    loggler.log("rolling back and writing error to logs.", error);
+
+                                    connection.rollback();
+                                    return connection.end();
+                                }
+
+                                connection.query(forecastsStmt, (error) => {
+                                    if (error) {
+                                        logger.log("error in SQL statement.");
+                                        loggler.log("rolling back and writing error to logs.", error);
+
+                                        connection.rollback();
+                                        return connection.end();
+                                    }
+
+                                    connection.commit((error) => {
+                                        if (error) {
+                                            logger.log("failed to commit transaction.");
+                                            logger.log("rolling back and writing error to logs.", error);
+
+                                            connection.rollback();
+                                            return connection.end();
+                                        }
+
+                                        connection.end();
+                                        logger.log("successfully inserted records into database.");
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
             });
-        });
-    } catch (error) {
-        console.log(error);
-    }
+        } catch (error) {
+            console.error(error);
+        }
+    });
 };
 
 /**
@@ -122,7 +120,7 @@ const bulkInsert = (data) => {
  */
 
 const prepareMowerSQL = (data) => {
-    const sql = "INSERT INTO gnometrics.mowers VALUES (" +
+    const sql = `INSERT INTO mowers VALUES (` +
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
     ")";
 
@@ -150,7 +148,7 @@ const prepareMowerSQL = (data) => {
         data.nextStartTs,
         data.override,
         data.restrictReason,
-        data.connected,
+        data.connected ? 1: 0,
         data.weather[0].fetchTs,
         data.userId
     ];
@@ -165,8 +163,8 @@ const prepareMowerSQL = (data) => {
  * @returns the prepared SQL statement
  */
 
-const prepareScheduleSQLs = (data) => {
-    const sql = "INSERT INTO gnometrics.schedules VALUES (" +
+const prepareScheduleSQL = (data) => {
+    const sql = `INSERT INTO schedules1 VALUES (` +
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
     ")";
 
@@ -191,7 +189,7 @@ const prepareScheduleSQLs = (data) => {
         statements.push(mysql.format(sql, values));
     });
 
-    return statements;
+    return statements.join(";");
 };
 
 /**
@@ -201,8 +199,8 @@ const prepareScheduleSQLs = (data) => {
  * @returns the prepared SQL statement
  */
 
-const prepareLocationSQLs = (data) => {
-    const sql = "INSERT INTO gnometrics.locations VALUES (" +
+const prepareLocationSQL = (data) => {
+    const sql = `INSERT INTO locations VALUES (` +
         "?, ?, ?, ?, ?, ?" +
     ")";
 
@@ -220,7 +218,7 @@ const prepareLocationSQLs = (data) => {
         statements.push(mysql.format(sql, values));
     });
 
-    return statements;
+    return statements.join(";");
 };
 
 /**
@@ -230,8 +228,8 @@ const prepareLocationSQLs = (data) => {
  * @returns the prepared SQL statement
  */
 
-const prepareSettingSQLs = (data) => {
-    const sql = "INSERT INTO gnometrics.settings VALUES (" +
+const prepareSettingSQL = (data) => {
+    const sql = `INSERT INTO settings VALUES (` +
         "?, ?, ?, ?, ?, ?" +
     ")";
 
@@ -249,7 +247,7 @@ const prepareSettingSQLs = (data) => {
         statements.push(mysql.format(sql, values));
     });
 
-    return statements;
+    return statements.join(";");
 };
 
 /**
@@ -259,8 +257,8 @@ const prepareSettingSQLs = (data) => {
  * @returns the prepared SQL statement
  */
 
-const prepareForecastSQLs = (data) => {
-    const sql = "INSERT INTO gnometrics.forecasts VALUES (" +
+const prepareForecastSQL = (data) => {
+    const sql = `INSERT INTO forecasts VALUES (` +
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
     ")";
 
@@ -297,7 +295,7 @@ const prepareForecastSQLs = (data) => {
         statements.push(mysql.format(sql, values));
     });
 
-    return statements;
+    return statements.join(";");
 };
 
 /**
