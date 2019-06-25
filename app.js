@@ -13,7 +13,7 @@ const husqv = {
  * Schedules script execution every 5 minutes.
  */
 
-cron.schedule("*/5 * * * *", () => {
+cron.schedule("*/15 * * * *", () => {
     init();
 });
 
@@ -42,9 +42,7 @@ const init = async () => {
 
         // write records to database
         
-        records.forEach(async (record) => {
-            await db.bulkInsert(record);
-        });
+        db.bulkInsert(records);
     } catch (error) {
         console.log(error);
     }
