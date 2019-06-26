@@ -13,7 +13,7 @@ const husqv = {
  * Schedules script execution every 5 minutes.
  */
 
-cron.schedule("* * * * *", () => {  // should be */15
+cron.schedule("*/15 * * * *", () => {
     init();
 });
 
