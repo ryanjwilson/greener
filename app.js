@@ -13,7 +13,7 @@ const husqv = {
  * Schedules script execution every 5 minutes.
  */
 
-cron.schedule("*/15 * * * *", () => {
+cron.schedule("* * * * *", () => {  // should be */15
     init();
 });
 
@@ -44,7 +44,7 @@ const init = async () => {
         
         db.bulkInsert(records);
     } catch (error) {
-        console.log(error);
+        logger.log("unknown and uncaught exception.", error);
     }
 };
 

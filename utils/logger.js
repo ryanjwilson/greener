@@ -29,4 +29,3 @@ const log = (message, error) => {
   module.exports = {
     log
   };
-  

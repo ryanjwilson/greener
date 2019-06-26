@@ -22,93 +22,80 @@ const getConnection = () => {
  * in a single transaction.
  * 
  * @param {Object} records the records to be inserted into the database
- * @throws a SQL error if there is a connection, transcation, or query error
+ * @throws a SQL error if there is a connection, transaction, or query error
  */
 
 const bulkInsert = (records) => {
     logger.log("establishing connection to database.");
 
-    records.forEach((record) => {
-        try {
-            const connection = getConnection();
-
-            connection.beginTransaction((error) => {
-                if (error) {
-                    return logger.log("database connection refused.", error);
-                }
-
-                const mowerStmt = prepareMowerSQL(record);
-                const schedulesStmt = prepareScheduleSQL(record);
-                const locationsStmt = prepareLocationSQL(record);
-                const settingsStmt = prepareSettingSQL(record);
-                const forecastsStmt = prepareForecastSQL(record);
-    
-                connection.query(mowerStmt, (error) => {
-                    if (error) {
-                        logger.log("error in SQL statement.");
-                        logger.log("rolling back and writing error to logs.", error);
-    
-                        connection.rollback();
-                        return connection.end();
+    const connection = getConnection();
+    records.forEach((record, index) => {
+        connection.beginTransaction((error) => {
+            try {
+                if (error) {                    
+                    if (error.code === "ENOTFOUND") {
+                        logger.log("database server is down or unreachable.", error);
+                    } else if (error.code === "ER_NOT_SUPPORTED_AUTH_MODE") {
+                        logger.log("unrecognized username or authentication protocol.", error);
+                    } else if (error.code === "ER_ACCESS_DENIED_ERROR") {
+                        logger.log("invalid password for username.", error);
+                    } else if (error.code === "ER_BAD_DB_ERROR") {
+                        logger.log("unrecognized schema.", error);
+                    } else {
+                        loggler.log("unknown and unhandled exception.", error);
                     }
 
-                    connection.query(schedulesStmt, (error) => {
-                        if (error) {
-                            logger.log("error in SQL statment.");
-                            logger.log("rolling back and writing error to logs.", error);
-        
-                            connection.rollback();
-                            return connection.end();
+                    return -1;
+                }
+
+                const preparedStmts = [
+                    prepareMowerSQL(record),
+                    prepareScheduleSQL(record),
+                    prepareLocationSQL(record),
+                    prepareSettingSQL(record),
+                    prepareForecastSQL(record)
+                ].join(";");
+
+                connection.query(preparedStmts, (error) => {
+                    if (error) {
+                        if (error.code === "ER_NO_SUCH_TABLE") {
+                            logger.log("error in SQL statement, rollback.", error);
+                        } else if (error.code === "ER_PARSE_ERROR") {
+                            logger.log("error in SQL statement, rollback.", error);
+                        } else {
+                            logger.log("unknown SQL exception, rollback.", error);
                         }
 
-                        connection.query(locationsStmt, (error) => {
-                            if (error) {
-                                logger.log("error in SQL statement.");
-                                logger.log("rolling back and writing error to logs.", error);
+                        connection.rollback();
+                        if (index === records.length - 1) {
+                            connection.end();
+                        }
 
-                                connection.rollback();
-                                return connection.end();
+                        return -1;
+                    }
+
+                    connection.commit((error) => {
+                        if (error) {
+                            logger.log("failed commit, rollback.", error);
+                            
+                            connection.rollback();
+                            if (index === records.length - 1) {
+                                connection.end();
                             }
+                        
+                            return -1;
+                        }
 
-                            connection.query(settingsStmt, (error) => {
-                                if (error) {
-                                    logger.log("error in SQL statement.");
-                                    loggler.log("rolling back and writing error to logs.", error);
-
-                                    connection.rollback();
-                                    return connection.end();
-                                }
-
-                                connection.query(forecastsStmt, (error) => {
-                                    if (error) {
-                                        logger.log("error in SQL statement.");
-                                        loggler.log("rolling back and writing error to logs.", error);
-
-                                        connection.rollback();
-                                        return connection.end();
-                                    }
-
-                                    connection.commit((error) => {
-                                        if (error) {
-                                            logger.log("failed to commit transaction.");
-                                            logger.log("rolling back and writing error to logs.", error);
-
-                                            connection.rollback();
-                                            return connection.end();
-                                        }
-
-                                        connection.end();
-                                        logger.log("successfully inserted records into database.");
-                                    });
-                                });
-                            });
-                        });
+                        if (index === records.length - 1) {
+                            connection.end();
+                            logger.log("successful commit, records inserted.");
+                        }
                     });
                 });
-            });
-        } catch (error) {
-            console.error(error);
-        }
+            } catch (error) {
+                logger.log("unknown SQL exception, rollback if needed.", error);
+            }
+        });
     });
 };
 
@@ -148,7 +135,7 @@ const prepareMowerSQL = (data) => {
         data.nextStartTs,
         data.override,
         data.restrictReason,
-        data.connected ? 1: 0,
+        data.connected ? 1 : 0,
         data.weather[0].fetchTs,
         data.userId
     ];
@@ -164,7 +151,7 @@ const prepareMowerSQL = (data) => {
  */
 
 const prepareScheduleSQL = (data) => {
-    const sql = `INSERT INTO schedules1 VALUES (` +
+    const sql = `INSERT INTO schedules VALUES (` +
         "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
     ")";
 
