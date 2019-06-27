@@ -12,31 +12,35 @@ const AMC_URL = "https://amc-api.dss.husqvarnagroup.net/v1/mowers";
  */
 
 const getToken = async () => {
-    logger.log("retrieving internal authentication token.");
+    logger.log("Requesting access token from Husqvarna internal endpoint.");
 
-    const url = `${AUTH_URL}/api/v3/token`;         // unofficial internal endpoint
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "X-Api-Key": process.env.HUSQV_API_KEY,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            data: {
-                attributes: {
-                    username: process.env.HUSQV_USERNAME,
-                    password: process.env.HUSQV_PASSWORD
-                },
-                type: "token"
-            }
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error(response.status);
+    try {
+        const url = `${AUTH_URL}/api/v3/token`;         // unofficial internal endpoint
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "X-Api-Key": process.env.HUSQV_API_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                data: {
+                    attributes: {
+                        username: process.env.HUSQV_USERNAME,
+                        password: process.env.HUSQV_PASSWORD
+                    },
+                    type: "token"
+                }
+            })
+        });
+    
+        if (!response.ok) {
+            logger.log(`Husqvarna internal endpoint returned a response status of ${response.status}.`, response);
+        } else {
+            return response.json();
+        }
+    } catch (e) {
+        logger.log("Husqvarna internal endpoint appears down or unreachable.", e);
     }
-
-    return response.json();
 };
 
 /**
@@ -48,21 +52,25 @@ const getToken = async () => {
  */
 
 const getMowers = async (token) => {
-    logger.log("fetching internal mower data.");
+    logger.log("Fetching mower data from Husqvarna internal endpoint.");
 
-    const response = await fetch(AMC_URL, {         // unofficial internal endpoint
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQV_API_KEY
+    try {
+        const response = await fetch(AMC_URL, {         // unofficial internal endpoint
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Authorization-Provider": "husqvarna",
+                "X-Api-Key": process.env.HUSQV_API_KEY
+            }
+        });
+    
+        if (!response.ok) {
+            logger.log(`Husqvarna internal endpoint returned a response status of ${response.status}.`, response);
+        } else {
+            return response.json();
         }
-    });
-
-    if (!response.ok) {
-        throw new Error(response.status);
+    } catch (e) {
+        logger.log("Husqvarna internal endpoint appears down or unreachable.", e);
     }
-
-    return response.json();
 };
 
 /**
@@ -75,20 +83,24 @@ const getMowers = async (token) => {
  */
 
 const getStatus = async (mowerId, token) => {
-    const url = `${AMC_URL}/${mowerId}/status`;     // unofficial internal endpoint
-    const response = await fetch(url, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQV_API_KEY
+    try {
+        const url = `${AMC_URL}/${mowerId}/status`;     // unofficial internal endpoint
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Authorization-Provider": "husqvarna",
+                "X-Api-Key": process.env.HUSQV_API_KEY
+            }
+        });
+    
+        if (!response.ok) {
+            logger.log(`Husqvarna internal endpoint returned a response status of ${response.status}.`, response);
+        } else {
+            return response.json();
         }
-    });
-
-    if (!response.ok) {
-        throw new Error(response.status);
+    } catch (e) {
+        logger.log("Husqvarna internal endpoint appears down or unreachable.", e);
     }
-
-    return response.json();
 };
 
 /**
@@ -101,20 +113,24 @@ const getStatus = async (mowerId, token) => {
  */
 
 const getGeofence = async (mowerId, token) => {
-    const url = `${AMC_URL}/${mowerId}/geofence`;   // unofficial internal endpoint
-    const response = await fetch(url, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQV_API_KEY
+    try {
+        const url = `${AMC_URL}/${mowerId}/geofence`;   // unofficial internal endpoint
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Authorization-Provider": "husqvarna",
+                "X-Api-Key": process.env.HUSQV_API_KEY
+            }
+        });
+    
+        if (!response.ok) {
+            logger.log(`Husqvarna internal endpoint returned a response status of ${response.status}.`, response);
+        } else {
+            return response.json();
         }
-    });
-
-    if (!response.ok) {
-        throw new Error(response.status);
+    } catch (e) {
+        logger.log("Husqvarna internal endpoint appears down or unreachable.", e);
     }
-
-    return response.json();
 };
 
 /**
@@ -125,20 +141,24 @@ const getGeofence = async (mowerId, token) => {
  */
 
 const getSettings = async (mowerId, token) => {
-    const url = `${AMC_URL}/${mowerId}/settings`;   // unofficial internal endpoint
-    const response = await fetch(url, {
-        headers: {
-            "Authorization": `Bearer ${token}`,
-            "Authorization-Provider": "husqvarna",
-            "X-Api-Key": process.env.HUSQV_API_KEY
+    try {
+        const url = `${AMC_URL}/${mowerId}/settings`;   // unofficial internal endpoint
+        const response = await fetch(url, {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Authorization-Provider": "husqvarna",
+                "X-Api-Key": process.env.HUSQV_API_KEY
+            }
+        });
+    
+        if (!response.ok) {
+            logger.log(`Husqvarna internal endpoint returned a response status of ${response.status}.`, response);
+        } else {
+            return response.json();
         }
-    });
-
-    if (!response.ok) {
-        throw new Error(response.status);
+    } catch (e) {
+        logger.log("Husqvarna internal endpoint appears down or unreachable.", e);
     }
-
-    return response.json();
 };
 
 /**
