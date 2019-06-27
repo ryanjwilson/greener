@@ -25,13 +25,10 @@ const init = async () => {
     try {
         let records = [];
 
-        // fetch external and internal access tokens, user information, and a list of paired
-        // mowers from both the external and internal endpoints.
-
-        const { access_token: externalToken, user_id: userId } = await husqv.api.getToken();
-        const { data: { id: internalToken }} = await husqv.internal.getToken();
-        const { data: externalMowers } = await husqv.api.getMowers(externalToken);
-        const internalMowers = await husqv.internal.getMowers(internalToken);
+        const { access_token: externalToken, user_id: userId } = await husqv.api.getToken();    // request access token
+        const { data: { id: internalToken }} = await husqv.internal.getToken();                 // and user information
+        const { data: externalMowers } = await husqv.api.getMowers(externalToken);              // fetch mower data from API
+        const internalMowers = await husqv.internal.getMowers(internalToken);                   // and internal endpoints
 
         // parse and aggregate external and internal mower data, as well as current and
         // forecasted weather conditions into an array.
@@ -39,12 +36,10 @@ const init = async () => {
         records = await aggregateExternalData(userId, externalMowers);
         records = await aggregateInternalData(internalMowers, records, internalToken);
         records = await aggregateWeatherConditions(records);
-
-        // write records to database
         
-        db.bulkInsert(records);
-    } catch (error) {
-        logger.log("unknown and uncaught exception.", error);
+        db.bulkInsert(records);     // write records to database
+    } catch (e) {
+        logger.log(e.message, e);
     }
 };
 
@@ -94,7 +89,9 @@ const aggregateExternalData = (userId, mowers) => {
  */
 
 const aggregateInternalData = async (mowers, records, token) => {
-    logger.log("fetching internal mower status, geofence, and settings data.");
+    logger.log("Fetching mower status from Husqvarna internal endpoint.");
+    logger.log("Fetching geofence data from Husqvarna internal endpoint.");
+    logger.log("Fetching settings data from Husqvarna internal endpoint.");
 
     for (let i = 0; i < mowers.length; i++) {
         const record = records[i];
@@ -114,6 +111,7 @@ const aggregateInternalData = async (mowers, records, token) => {
 
         record.lastLocations = status.lastLocations.filter((location) => {
             delete location.gpsStatus;
+            
             return true;
         });
         record.settings = settings.filter((setting) => {        
@@ -141,7 +139,7 @@ const aggregateInternalData = async (mowers, records, token) => {
  */
 
 const aggregateWeatherConditions = async (records) => {
-    logger.log("fetching current and forecasted weather conditions.");
+    logger.log("Fetching current and forecasted weather conditions from Dark Sky API.");
 
     for (let i = 0; i < records.length; i++) {
         const record = records[i];
