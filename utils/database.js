@@ -26,75 +26,69 @@ const getConnection = () => {
  */
 
 const bulkInsert = (records) => {
-    logger.log("establishing connection to database.");
+    logger.log("Establishing secure connection to database.");
 
     const connection = getConnection();
-    records.forEach((record, index) => {
+    records.forEach((record, i) => {
         connection.beginTransaction((error) => {
-            try {
-                if (error) {                    
-                    if (error.code === "ENOTFOUND") {
-                        logger.log("database server is down or unreachable.", error);
-                    } else if (error.code === "ER_NOT_SUPPORTED_AUTH_MODE") {
-                        logger.log("unrecognized username or authentication protocol.", error);
-                    } else if (error.code === "ER_ACCESS_DENIED_ERROR") {
-                        logger.log("invalid password for username.", error);
-                    } else if (error.code === "ER_BAD_DB_ERROR") {
-                        logger.log("unrecognized schema.", error);
-                    } else {
-                        loggler.log("unknown and unhandled exception.", error);
+            if (error) {
+                switch (error.code) {
+                    case "ENOTFOUND": logger.log(`Database server appears down or unreachable (batch ${i + 1} of ${records.length}).`, error); break;
+                    case "ER_NOT_SUPPORTED_AUTH_MODE": logger.log(`Unrecognized credentials or authentication protocol (batch ${i + 1} of ${records.length}).`, error); break;
+                    case "ER_ACCESS_DENIED_ERROR": logger.log(`Unrecognized credentials or authentication protocol (batch ${i + 1} of ${records.length}).`, error); break;
+                    case "ER_BAD_DB_ERROR": logger.log(`Unrecognized database schema (batch ${i + 1} of ${records.length}).`, error); break;
+                    case "ER_NO_SUCH_TABLE": logger.log(`Error while parsing SQL statement (batch ${i + 1} of ${records.length}).`, error); break;
+                    case "ER_PARSE_ERROR": logger.log(`Error while parsing SQL statement (batch ${i + 1} of ${records.length}).`, error); break;
+                    default: logger.log(`Unknown connection or transaction error (batch ${i + 1} of ${records.length}).`, error); break;
+                }
+
+                return -1;
+            }
+
+            const preparedStmts = [
+                prepareMowerSQL(record),
+                prepareScheduleSQL(record),
+                prepareLocationSQL(record),
+                prepareSettingSQL(record),
+                prepareForecastSQL(record)
+            ].filter(Boolean).join(";");
+
+            connection.query(preparedStmts, (error) => {
+                if (error) {
+                    switch (error.code) {
+                        case "ER_NO_SUCH_TABLE": logger.log(`Error while parsing SQL statement (batch ${i + 1} of ${records.length}).`, error); break;
+                        case "ER_PARSE_ERROR": logger.log(`Error while parsing SQL statement (batch ${i + 1} of ${records.length}).`, error); break;
+                        default: logger.log(`Unknown SQL parsing error (batch ${i + 1} of ${records.length}).`, error); break;
+                    }
+
+                    connection.rollback();
+                    if (i === records.length - 1) {
+                        connection.end();
                     }
 
                     return -1;
                 }
 
-                const preparedStmts = [
-                    prepareMowerSQL(record),
-                    prepareScheduleSQL(record),
-                    prepareLocationSQL(record),
-                    prepareSettingSQL(record),
-                    prepareForecastSQL(record)
-                ].join(";");
-
-                connection.query(preparedStmts, (error) => {
+                connection.commit((error) => {
                     if (error) {
-                        if (error.code === "ER_NO_SUCH_TABLE") {
-                            logger.log("error in SQL statement, rollback.", error);
-                        } else if (error.code === "ER_PARSE_ERROR") {
-                            logger.log("error in SQL statement, rollback.", error);
-                        } else {
-                            logger.log("unknown SQL exception, rollback.", error);
+                        switch (error.code) {
+                            default: logger.log(`Unknown commit error (batch ${i + 1} of ${records.length}).`, error); break;
                         }
 
-                        connection.rollback();
-                        if (index === records.length - 1) {
+                        connection.rollback();    
+                        if (i === records.length - 1) {
                             connection.end();
                         }
 
                         return -1;
                     }
-
-                    connection.commit((error) => {
-                        if (error) {
-                            logger.log("failed commit, rollback.", error);
-                            
-                            connection.rollback();
-                            if (index === records.length - 1) {
-                                connection.end();
-                            }
-                        
-                            return -1;
-                        }
-
-                        if (index === records.length - 1) {
-                            connection.end();
-                            logger.log("successful commit, records inserted.");
-                        }
-                    });
+    
+                    if (i === records.length - 1) {
+                        connection.end();
+                    }
+                    logger.log(`Successful database insertion (batch ${i + 1} of ${records.length}).`);
                 });
-            } catch (error) {
-                logger.log("unknown SQL exception, rollback if needed.", error);
-            }
+            });
         });
     });
 };
