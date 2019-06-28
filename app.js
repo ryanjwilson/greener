@@ -1,6 +1,5 @@
 require("dotenv").config({ path: "./config/.env" });
 
-const cron = require("node-cron");
 const logger = require("./utils/logger");
 const darksky = require("./utils/weather-api");
 const db = require("./utils/database");
@@ -8,14 +7,6 @@ const husqv = {
     api: require("./utils/husqvarna-api"),
     internal: require("./utils/husqvarna-internal")
 };
-
-/**
- * Schedules script execution every 5 minutes.
- */
-
-cron.schedule("*/15 * * * *", () => {
-    init();
-});
 
 /**
  * Executes API requests in parallel before writing fetched data to database.
@@ -208,3 +199,9 @@ const aggregateWeatherConditions = async (records) => {
 
     return records;
 };
+
+/**
+ * Starts the applicaiton.
+ */
+
+init();
