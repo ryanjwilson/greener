@@ -66,6 +66,5 @@ const getFormattedDate = (date) => {
  */
 
 module.exports = {
-	log,
-	getLogger
+	log
 };
