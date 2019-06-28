@@ -1,9 +1,11 @@
 const log4js = require("log4js");
 
 /**
- * Logs a timestamped messaged to the console.
+ * Logs a timestamped messaged to the console, and writes an error (if received)
+ * to a timestamped log file.
  * 
  * @param {string} message the message to be logged
+ * @param {Object} error the error or response to write to the log file
  */
 
 const log = (message, error) => {
@@ -64,5 +66,6 @@ const getFormattedDate = (date) => {
  */
 
 module.exports = {
-	log
+	log,
+	getLogger
 };
