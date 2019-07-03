@@ -19,10 +19,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryanjwilson/garden-gnometrics.git"
+    "url": "https://github.com/ryanjwilson/greener.git"
   },
   "bugs": {
-    "url": "https://github.com/ryanjwilson/garden-gnometrics/issues"
+    "url": "https://github.com/ryanjwilson/greener/issues"
   },
   "author": "Ryan Wilson (@ryanjwilson)",
   "license": "MIT"
