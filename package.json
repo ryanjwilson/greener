@@ -1,5 +1,5 @@
 {
-  "name": "garden-gnometrics",
+  "name": "greener",
   "version": "1.0.0",
   "description": "A backend Node.js service that aggregates autonomous lawn and garden device metrics, geolocation data, and current and forecasted weather conditions.",
   "main": "app.js",
@@ -14,8 +14,8 @@
   },
   "devDependencies": {},
   "engines": {
-    "node": "12.4.0",
-    "npm": "6.9.0"
+    "node": "10.16.0",
+    "npm": "6.10.0"
   },
   "repository": {
     "type": "git",
