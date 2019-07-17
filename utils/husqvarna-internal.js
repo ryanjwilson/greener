@@ -7,7 +7,6 @@ const AMC_URL = "https://amc-api.dss.husqvarnagroup.net/v1/mowers";
 /**
  * Requests an access token from an internal endpoint.
  * 
- * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of authentication attributes
  */
 
@@ -47,7 +46,6 @@ const getToken = async () => {
  * Retrieves all paired mowers for a single user.
  * 
  * @param {string} token the access token associated with this user
- * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a list of available mowers
  */
 
@@ -78,7 +76,6 @@ const getMowers = async (token) => {
  * 
  * @param {string} mowerId the ID of the mower to find
  * @param {string} token the access token associated with this user
- * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of status attributes for the mower
  */
 
@@ -108,7 +105,6 @@ const getStatus = async (mowerId, token) => {
  * 
  * @param {string} mowerId the ID of the mower to find
  * @param {string} token the access token associated with this user
- * @throws an error for all HTTP response codes not in the range 200-299
  * @returns a collection of mower attributes and data
  */
 
@@ -138,6 +134,7 @@ const getGeofence = async (mowerId, token) => {
  * 
  * @param {string} mowerId the ID of the mower to find
  * @param {string} token the access token associated with this user
+ * @returns a collection of mower settings
  */
 
 const getSettings = async (mowerId, token) => {

@@ -22,7 +22,6 @@ const getConnection = () => {
  * in a single transaction.
  * 
  * @param {Object} records the records to be inserted into the database
- * @throws a SQL error if there is a connection, transaction, or query error
  */
 
 const bulkInsert = (records) => {
