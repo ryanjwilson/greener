@@ -14,9 +14,9 @@ const rachio = require("./utils/rachio-api");
  * Schedules the script to run every 15 minutes.
  */
 
-// cron.schedule("*/15 * * * *", () => {
-//     init();
-// });
+cron.schedule("*/15 * * * *", () => {
+    init();
+});
 
 /**
  * Executes API requests in parallel before writing fetched data to database.
@@ -49,12 +49,12 @@ const init = async () => {
         // parse and aggregate sprinkler data, as well as current and forecasted weather conditions into an array
 
         sprinklers = await aggregateSprinklerData(rachioUserId, devices);
-        sprinklers = await aggregateSprinklerWeatherConditions(sprinklers);
+        sprinklers = await aggregateSprinklerWeatherConditions(sprinklers, mowers[0].weather[0].fetchTs);
 
         // insert records into database
 
         db.insertMowers(mowers);
-        db.insertSprinklers(sprinkers);
+        db.insertSprinklers(sprinklers);
     } catch (e) {
         logger.log(e.message, e);
     }
@@ -242,6 +242,7 @@ const aggregateSprinklerData = async (userId, sprinklers) => {
         records.push({
             manufacturer: "rachio",
             deviceId: sprinkler.id,
+            deviceType: "sprinkler",
             deviceName: sprinkler.name,
             deviceModel: sprinkler.model,
             serialNo: sprinkler.serialNumber,
@@ -270,6 +271,9 @@ const aggregateSprinklerData = async (userId, sprinklers) => {
                 delete zone.customCrop;
                 delete zone.customShade;
                 delete zone.wateringAdjustmentRuntimes;
+                delete zone.imageUrl;
+                delete zone.fixedRuntime;
+                delete zone.runtimeNoMultiplier;
     
                 return true;
             }).sort((a, b) => {
@@ -286,6 +290,7 @@ const aggregateSprinklerData = async (userId, sprinklers) => {
                 delete scheduleRule.startDay;
                 delete scheduleRule.startMonth;
                 delete scheduleRule.startYear;
+                delete scheduleRule.scheduleJobTypes;
 
                 return true;
             }),
@@ -308,7 +313,7 @@ const aggregateSprinklerData = async (userId, sprinklers) => {
  * @returns a list of records after adding current and forecasted weather conditions
  */
 
-const aggregateSprinklerWeatherConditions = async (records) => {
+const aggregateSprinklerWeatherConditions = async (records, timestamp) => {
     logger.log("Fetching current and forecasted weather conditions from Rachio API.");
 
     for (let i = 0; i < records.length; i++) {
@@ -327,7 +332,8 @@ const aggregateSprinklerWeatherConditions = async (records) => {
             dewPoint: current.dewPoint,
             humidity: current.humidity,
             windSpeed: current.windSpeed,
-            cloudCover: current.cloudCover
+            cloudCover: current.cloudCover,
+            fetchTs: timestamp
         }];
 
         for (let j = 0; j < forecast.length; j++) {
@@ -345,7 +351,8 @@ const aggregateSprinklerWeatherConditions = async (records) => {
                 dewPoint: daily.dewPoint,
                 humidity: daily.humidity,
                 windSpeed: daily.windSpeed,
-                cloudCover: daily.cloudCover
+                cloudCover: daily.cloudCover,
+                fetchTs: timestamp
             });
         }
 
@@ -354,5 +361,3 @@ const aggregateSprinklerWeatherConditions = async (records) => {
 
     return records;
 };
-
-init();
