@@ -15,14 +15,14 @@ const rachio = require("./utils/rachio-api");
  */
 
 cron.schedule("*/15 * * * *", () => {
-    init();
+    poll();
 });
 
 /**
- * Executes API requests in parallel before writing fetched data to database.
+ * Executes API requests sequentially before writing fetched data to database.
  */
 
-const init = async () => {
+const poll = async () => {
     try {
         let mowers = [];
         let sprinklers = [];
