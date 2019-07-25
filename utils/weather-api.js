@@ -1,4 +1,5 @@
 const fetch = require("node-fetch");
+const logger = require("./logger");
 
 const WEATHER_URL = "https://api.darksky.net/forecast";
 
