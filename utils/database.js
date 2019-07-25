@@ -49,7 +49,7 @@ const insertMowers = (mowers) => {
                 prepareMowerLocationSQL(mower),
                 prepareMowerSettingSQL(mower),
                 prepareMowerForecastSQL(mower)
-            ].filter(Boolean).join(";");
+            ].filter(Boolean).join(";").concat(";");
 
             connection.query(preparedStmts, (error) => {
                 if (error) {
@@ -122,7 +122,7 @@ const insertSprinklers = (sprinklers) => {
                 prepareSprinklerScheduleSQL(sprinkler),
                 prepareSprinklerZoneSQL(sprinkler),
                 prepareSprinklerForecastSQL(sprinkler)
-            ].filter(Boolean).join(";");
+            ].filter(Boolean).join(";").concat(";");
 
             connection.query(preparedStmts, (error) => {
                 if (error) {
